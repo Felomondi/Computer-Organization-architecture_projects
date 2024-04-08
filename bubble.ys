@@ -1,0 +1,79 @@
+# Execution begins at address 0 
+    .pos 0 
+    irmovq stack, %rsp   # Set up stack pointer  
+    call main            # Execute main program
+    halt                 # Terminate program 
+
+# Array
+    .align 8
+arr:
+    .quad 0x64
+    .quad 0x34
+    .quad 0x40
+    .quad 0x25
+    .quad 0x12
+    .quad 0x22
+    .quad 0x11
+    .quad 0x90
+    .quad 0x55
+    .quad 0x42
+
+main:
+    irmovq arr, %rdi    
+    irmovq $10, %rsi
+    call bubble
+    ret 
+
+# start bubble
+
+bubble:
+    irmovq $0, %r8   # inner loop index 
+    irmovq $0, %r9   # temp for swapping 
+    irmovq $0, %r10  # pointer to element in arr
+    irmovq $0, %r11  # pointer to next element in arr
+    
+main_loop:
+  rrmovq %rsi, %r9  # move the value from rsi to r9 (the len)
+  irmovq $1, %r13   # increment value stored in r13
+  subq %r13, %r9    # subtrcact 1 from length (r9)
+  jle return        
+  rrmovq %rdi, %r10 #move the arr to r10
+  irmovq $0, %r8    # reset index to zero
+  
+inner_loop:
+    rrmovq %rsi, %r9   #move the length to r9
+    iaddq $-1, %r9     # decrease the length
+    subq %r8, %r9      
+    jle finished_loop
+    
+    rrmovq %r10, %r11  #set the arr_curr
+    iaddq $8, %r11     #move arr_curr to the next element 
+    mrmovq (%r10), %r9 # move arr_curr to r9
+    rrmovq %r9, %rcx   #move r9 to rcx
+    mrmovq (%r11), %r12  move arr_next to r12
+    subq %r12, %rcx    #compare arr_curr and arr_next
+    
+    jl omit_loop
+    
+    rmmovq %r12, (%r10)  #set arr_curr to arr_next
+    rmmovq %r9, (%r11)   #set arr_next to tmp
+    
+omit_loop:
+    iaddq $1, %r8        #increment the index 
+    rrmovq %r11, %r10    # set arr_curr to arr_next
+    jmp inner_loop       #jump back to inner loop
+    
+finished_loop:
+   iaddq $-1, %rsi       #decrement the length by one 
+   jmp main_loop         # jump back to the main loop
+    
+
+return:                  #return 
+      ret   
+    
+    
+# end bubble
+
+# The stack starts here and grows to lower addresses
+    .pos 0x200      
+stack:   

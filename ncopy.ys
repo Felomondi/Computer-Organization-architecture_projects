@@ -1,0 +1,119 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name here: Felix Omondi
+#
+# Descibe how and why you modified the baseline code.
+#
+# First I implemented iaddq and replaced addq with iaddq.
+# Implemented loop unrolling to reduce the number of times the 
+# algorithm has to loop by making it go through 3 elements 
+# at the same time in one loop. 
+# Before the main loop, I handled mispredicted branches by 
+# not taking a jump when needed and executing immediate instructions
+# before the loop. 
+# Handled load/use hazard by performing extra instructions after
+# doing doing a memory to register move. So basically whenever 
+# I moved a value to a particular register i avoided using 
+# the register immediately after, and performed other mandatory 
+# instructions before using the register. 
+# Added another loop to handle extra elements in the loops when
+# the length is less than 3. So the extra loop handles elements when
+# the length is either 1 or 2.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	xorq %rax,%rax		# count = 0;
+	#andq %rdx,%rdx		# len <= 0?
+	iaddq $-3, %rdx 
+	jge Loop	    # if so, goto Done:
+	iaddq $3, %rdx
+	jg lastItems
+	ret
+
+Loop:	
+	mrmovq (%rdi), %r10	    # read val from src...
+	mrmovq 8(%rdi), %r11	# read val from src...
+	mrmovq 16(%rdi), %r12	# read val from src...
+	mrmovq 24(%rdi), %rcx	# read val from src...
+
+	rmmovq %r10, (%rsi)	    # ...and store it to dst
+	rmmovq %r11, 8(%rsi)	# ...and store it to dst
+	rmmovq %r12, 16(%rsi)	# ...and store it to dst
+	rmmovq %rcx, 24(%rsi)	# ...and store it to dst
+
+	andq %r10, %r10		    # val <= 0?
+	jle Npos		        # if so, goto Npos: 
+	iaddq $1, %rax		    # count++
+
+
+Npos:	
+	andq %r11, %r11		    # val <= 0?
+	jle Npos2		        # if so, goto Npos: 
+	iaddq $1, %rax		    # count++
+
+Npos2:	
+	andq %r12, %r12		    # val <= 0?
+	jle Npos3    	        # if so, goto Npos: 
+	iaddq $1, %rax		    # count++
+
+Npos3:	
+	andq %rcx, %rcx		    # val <= 0?
+	jle finish		        # if so, goto Npos: 
+	iaddq $1, %rax		    # count++
+
+
+finish:
+	iaddq $32, %rdi		# src++
+	iaddq $32, %rsi		# dst++
+	iaddq $-4, %rdx		# len--
+
+	jge Loop			    # if so, goto Loop:
+
+	iaddq $4, %rdx 
+	je Done
+
+lastItems:
+	mrmovq (%rdi), %r10	  # read val from src...
+	mrmovq 8(%rdi), %r11	  # read val from src...
+
+	rmmovq %r10, (%rsi)	  # ...and store it to dst
+	rmmovq %r11, 8(%rsi)	  # ...and store it to dst
+
+	andq %r10, %r10		  # val <= 0?
+	jle finish3	      # if so, goto Npos: 
+	iaddq $1, %rax		  # count++
+
+finish3:
+    andq %r10, %r10		  # val <= 0?
+	jle finish2	      # if so, goto Npos: 
+	iaddq $1, %rax		  # count++
+
+finish2:
+	iaddq $16, %rdi		# src++
+	iaddq $16, %rsi		# dst++
+	iaddq $-2, %rdx		# len--
+	jge lastItems
+
+	iaddq $2, %rdx 
+	je Done
+
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */

@@ -1,0 +1,61 @@
+# Execution begins at address 0 
+    .pos 0 
+    irmovq stack, %rsp      # Set up stack pointer  
+    call main               # Execute main program
+    halt                    # Terminate program 
+
+# Linked List
+    .align 8
+lst:
+    .quad 0x000a
+    .quad ele1
+
+    .pos 48
+ele1:
+    .quad 0x00b0
+    .quad ele2
+
+    .pos 64
+ele2:
+    .quad 0x0c00
+    .quad ele3
+
+    .pos 96
+ele3:
+    .quad 0xd000
+    .quad 0
+
+main:
+    irmovq lst, %rdi    
+    irmovq $0xd000, %rsi
+    call find
+    ret 
+
+# start find
+
+find:
+    irmovq $0, %r9       #index 
+    irmovq $0, %rax     #return value 
+    
+loop:
+    mrmovq (%rdi), %r10  #move node value to r10
+    xorq %rdi, %r9       #check if rdi is null
+    je  not_found        #if null jump to not_found and return
+    xorq %rsi, %r10      #check is value if equal to first element
+    je return            #return if true
+    iaddq $8, %rdi       #go to the next elemnt in the list
+    mrmovq (%rdi), %rdi  #move the value of rdi back to rdi
+    iaddq $1, %rax       # increase the index (return value)
+    jmp loop              #repeat the process
+    
+not_found:
+    irmovq $-1, %rax     #move -1 to rax of not found 
+     
+return:                  #return rax
+    ret 
+    
+# end find
+
+# The stack starts here and grows to lower addresses
+    .pos 0x200      
+stack:   
