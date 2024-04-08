@@ -1,0 +1,57 @@
+# Execution begins at address 0 
+    .pos 0 
+    irmovq stack, %rsp      # Set up stack pointer  
+    call main       # Execute main program
+    halt            # Terminate program 
+
+# Array of 4 elements
+    .align 8    
+array:
+    .quad 0x000d000d000d
+    .quad 0x00c000c000c0
+    .quad 0x0b000b000b00
+    .quad 0xa000a000a000
+
+main:
+    irmovq array,%rdi   
+    irmovq $4,%rsi
+    call rsum       # rsum(array, 4)
+    ret
+
+# C version of rsum
+#
+# long rsum(long *start, long count) {
+#    if (count == 0) {
+#        return 0;
+#    }    
+#    return *start + rsum(start+1, count-1);
+# }
+
+/* $begin rsum-ys */
+# long rsum(long *start, long count)
+# start in %rdi, count in %rsi
+rsum:
+    xorq %rax, %rax 
+    andq %rsi, %rsi    
+    je return 
+    pushq %rbx 
+    irmovq $8, %r8     # constant 8
+    irmovq $1, %r9     #constat 1
+    mrmovq(%rdi), %rbx #move rdi to rbx 
+    
+    addq   %r8, %rdi     # start++
+    subq   %r9, %rsi     # count--.  Set CC
+    
+    call rsum 
+    addq %rbx, %rax 
+    popq %rbx       # Restore callee-saved register
+ 
+    
+return:
+    ret
+/* $end rsum-ys */
+
+# The stack starts here and grows to lower addresses
+    .pos 0x200      
+stack:   
+
